@@ -14,6 +14,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
 
+import Network.Network;
+
 public class Agent {
     private List<Integer> hiddenLayers = null;
     private Double learningRate = 0.01;
@@ -260,6 +262,7 @@ public class Agent {
     }
 
     public void start() throws AgentException {
+        Network network = null;
         Map<String, List<DataPoint>> splitData = null;
         List<Double> featureMinimums = null, featureMaximums = null;
         List<DataPoint> trainingSet = null, validationSet = null;
@@ -279,5 +282,6 @@ public class Agent {
         featureMaximums = getFeatureMaximums(trainingSet);
         scaleDataSet(trainingSet, featureMinimums, featureMaximums);
         scaleDataSet(validationSet, featureMinimums, featureMaximums);
+
     }
 }
