@@ -34,7 +34,7 @@ public class Network {
     private void connectLayers(List<Neuron> sourceLayer, List<Neuron> destinationLayer) {
         for (Neuron source : sourceLayer) {
             for (Neuron destination : destinationLayer) {
-                source.addEdgeTo(destination, this.getInitialWeight());
+                source.addEdgeTo(destination, this.getRandomInitialWeight());
             }
         }
     }
@@ -92,10 +92,8 @@ public class Network {
     }
 
     public Double getRandomInitialWeight() {
-        return ThreadLocalRandom.current().nextDouble(
-            0 - this.getInitialWeight(),
-            this.getInitialWeight()
-        );
+        Double initialWeight = this.getInitialWeight();
+        return ThreadLocalRandom.current().nextDouble(0 - initialWeight, initialWeight);
     }
 
     public void setInitialWeight(Double weight) {
