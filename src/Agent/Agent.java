@@ -17,7 +17,7 @@ import java.util.HashMap;
 import Network.Network;
 
 public class Agent {
-    private List<Integer> hiddenLayers = null;
+    private List<Integer> hiddenLayerSizes = null;
     private Double learningRate = 0.01;
     private Integer epochLimit = 1000;
     private Integer batchSize = 1;
@@ -28,16 +28,16 @@ public class Agent {
     private List<DataPoint> data = null;
 
     public Agent() {
-        this.hiddenLayers = new ArrayList<>();
+        this.hiddenLayerSizes = new ArrayList<>();
         this.data = new ArrayList<>();
     }
 
-    public List<Integer> getHiddenLayers() {
-        return this.hiddenLayers;
+    public List<Integer> getHiddenLayerSizes() {
+        return this.hiddenLayerSizes;
     }
 
-    public void setHiddenLayers(List<Integer> hiddenLayers) {
-        this.hiddenLayers = new ArrayList<>(hiddenLayers);
+    public void setHiddenLayerSizes(List<Integer> hiddenLayers) {
+        this.hiddenLayerSizes = new ArrayList<>(hiddenLayers);
     }
 
     public Double getLearningRate() {
@@ -110,6 +110,44 @@ public class Agent {
 
     public void setData(List<DataPoint> data) {
         this.data = new ArrayList<>(data);
+    }
+
+    public Integer getNumberOfFeatures() {
+        List<DataPoint> dataSet = this.getData();
+        Integer featureMax = null, size = null;
+
+        if (dataSet.size() == 0) {
+            return 0;
+        }
+
+        featureMax = dataSet.get(0).getFeatures().size();
+        for (int i = 1; i < dataSet.size(); i++) {
+            size = dataSet.get(i).getFeatures().size();
+            if (size > featureMax) {
+                featureMax = size;
+            }
+        }
+
+        return featureMax;
+    }
+
+    public Integer getNumberOfClasses() {
+        List<DataPoint> dataSet = this.getData();
+        Integer classMax = null, size = null;
+
+        if (dataSet.size() == 0) {
+            return 0;
+        }
+
+        classMax = dataSet.get(0).getTargets().size();
+        for (int i = 1; i < dataSet.size(); i++) {
+            size = dataSet.get(i).getTargets().size();
+            if (size > classMax) {
+                classMax = size;
+            }
+        }
+
+        return classMax;
     }
 
     private static String cleanRawData(String rawData) {
@@ -278,10 +316,17 @@ public class Agent {
 
         trainingSet = splitData.get("training");
         validationSet = splitData.get("validation");
+
         featureMinimums = getFeatureMinimums(trainingSet);
         featureMaximums = getFeatureMaximums(trainingSet);
         scaleDataSet(trainingSet, featureMinimums, featureMaximums);
         scaleDataSet(validationSet, featureMinimums, featureMaximums);
 
+        network = new Network(
+            this.getNumberOfFeatures(),
+            this.getNumberOfClasses(),
+            this.getHiddenLayerSizes(),
+            this.getWeightInitialization()
+        );
     }
 }

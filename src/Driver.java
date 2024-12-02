@@ -61,7 +61,7 @@ public class Driver {
                     }
                 }
 
-                agent.setHiddenLayers(hiddenLayers);
+                agent.setHiddenLayerSizes(hiddenLayers);
                 break;
             case "-a":
                 arg = argIterator.nextArgument();
