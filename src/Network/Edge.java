@@ -42,4 +42,20 @@ public class Edge {
     public void setDestination(Neuron destination) {
         this.destination = destination;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        Edge edge = null;
+
+        if (!(o instanceof Edge)) {
+            return false;
+        }
+
+        edge = (Edge) o;
+        return (
+            this.getWeight() == edge.getWeight()
+                && this.getSource().equals(edge.getSource())
+                && this.getDestination().equals(edge.getDestination())
+        );
+    }
 }
