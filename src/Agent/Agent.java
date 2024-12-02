@@ -239,7 +239,7 @@ public class Agent {
         return featureMaximums;
     }
 
-    private static void scaleDataPoints(List<DataPoint> data, List<Double> featureMinimums, List<Double> featureMaximums) {
+    private static void scaleDataSet(List<DataPoint> data, List<Double> featureMinimums, List<Double> featureMaximums) {
         Double min = null, max = null, scalar = null;
         List<Double> features = null;
 
@@ -277,7 +277,7 @@ public class Agent {
         validationSet = splitData.get("validation");
         featureMinimums = getFeatureMinimums(trainingSet);
         featureMaximums = getFeatureMaximums(trainingSet);
-        scaleDataPoints(trainingSet, featureMinimums, featureMaximums);
-        scaleDataPoints(validationSet, featureMinimums, featureMaximums);
+        scaleDataSet(trainingSet, featureMinimums, featureMaximums);
+        scaleDataSet(validationSet, featureMinimums, featureMaximums);
     }
 }
