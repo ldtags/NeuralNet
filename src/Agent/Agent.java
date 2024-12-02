@@ -82,7 +82,11 @@ public class Agent {
         return this.weightInit;
     }
 
-    public void setWeightInitialization(Double weight) {
+    public void setWeightInitialization(Double weight) throws AgentException {
+        if (weight <= 0) {
+            throw new AgentException("Weight initializer must be a positive integer");
+        }
+
         this.weightInit = weight;
     }
 

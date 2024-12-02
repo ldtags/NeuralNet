@@ -137,6 +137,10 @@ public class Driver {
                     agent.setWeightInitialization(Double.parseDouble(arg));
                 } catch (NumberFormatException e) {
                     System.err.printf("Invalid weight initialization: %s\n", arg);
+                    return;
+                } catch (AgentException e) {
+                    System.err.println(e.getMessage());
+                    return;
                 }
 
                 break;
@@ -151,6 +155,7 @@ public class Driver {
                     agent.setVerbosity(Integer.parseInt(arg));
                 } catch (NumberFormatException e) {
                     System.err.printf("Invalid verbosity level: %s\n", arg);
+                    return;
                 }
 
                 break;
