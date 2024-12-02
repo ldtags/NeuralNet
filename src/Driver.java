@@ -2,13 +2,12 @@
  * Author: Liam D. Tangney
  */
 
-import java.util.List;
-
 import Agent.Agent;
 import Agent.AgentException;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.ArrayList;
 
 public class Driver {
