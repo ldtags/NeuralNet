@@ -2,7 +2,7 @@
  * Author: Liam D. Tangney
  */
 
-package Agent;
+package Models;
 
 import java.util.List;
 import java.util.ArrayList;
