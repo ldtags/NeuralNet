@@ -3,7 +3,12 @@
  */
 
 import java.util.List;
+
+import Agent.Agent;
+import Agent.AgentException;
+
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class Driver {
@@ -39,7 +44,13 @@ public class Driver {
                     return;
                 }
 
-                agent.loadData(arg);
+                try {
+                    agent.loadData(arg);
+                } catch (IOException | NumberFormatException e) {
+                    System.err.printf("An error occurred while parsing %s: %s", arg, e.getMessage());
+                    return;
+                }
+
                 break;
             case "-h":
                 while ((arg = argIterator.nextArgument()) != null) {
@@ -145,6 +156,13 @@ public class Driver {
 
                 break;
             }
+        }
+
+        try {
+            agent.start();
+        } catch (AgentException e) {
+            System.err.println(e.getMessage());
+            return;
         }
     }
 }
