@@ -14,6 +14,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
 
+import Models.DataPoint;
+
 import Network.Network;
 
 public class Agent {
@@ -297,6 +299,45 @@ public class Agent {
                 dataPoint.setFeature(i, -1 + 2 * scalar);
             }
         }
+    }
+
+    /**
+     * Splits data into a collection of batches. Each batch will be as evenly sized
+     * as possible.
+     * 
+     * @param data Data set being split into batches
+     * 
+     * @return The collection of batches
+     */
+    private List<List<DataPoint>> getBatches(List<DataPoint> data) {
+        int batchCount, batchNum;
+        List<DataPoint> randomData = null;
+        List<List<DataPoint>> batches = null;
+
+        if (this.getBatchSize() <= 1) {
+            batches = new ArrayList<>(1);
+            batches.add(data);
+            return batches;
+        }
+
+        batchCount = Math.ceilDiv(data.size(), this.getBatchSize());
+        batches = new ArrayList<>(batchCount);
+        if (this.randomized) {
+            randomData = new ArrayList<>(data);
+            Collections.shuffle(randomData);
+            data = randomData;
+        }
+
+        for (int i = 0; i < data.size(); i++) {
+            batchNum = Math.floorDiv(i, this.getBatchSize());
+            if (batches.size() <= batchNum) {
+                batches.add(new ArrayList<>());
+            }
+
+            batches.get(batchNum).add(data.get(i));
+        }
+
+        return batches;
     }
 
     public void start() throws AgentException {
