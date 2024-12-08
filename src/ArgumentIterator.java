@@ -11,43 +11,69 @@ public class ArgumentIterator {
         this.index = 0;
     }
 
-    public boolean hasNext() {
-        return index <= args.length;
-    }
-
-    public String getCurrentArgument() {
-        if (!this.hasNext()) {
-            return null;
+    public boolean hasNextFlag() {
+        for (int i = this.index + 1; i < this.args.length; i++) {
+            if (this.args[i].charAt(0) == '-') {
+                return true;
+            }
         }
 
-        return this.args[this.index];
+        return false;
+    }
+
+    public boolean hasNextArgument() {
+        for (int i = this.index + 1; i < this.args.length; i++) {
+            if (this.args[i].charAt(0) != '-') {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public String nextFlag() {
-        while (this.hasNext() && this.getCurrentArgument().charAt(0) != '-') {
-            this.index++;
-        }
+        String flag = null;
 
-        if (!this.hasNext()) {
+        if (!this.hasNextFlag()) {
             return null;
         }
 
-        String arg = this.getCurrentArgument();
-        this.index++;
-        return arg;
+        if (this.index != 0) {
+            this.index++;
+        }
+
+        while (this.index < this.args.length) {
+            flag = this.args[this.index];
+            if (flag.charAt(0) == '-') {
+                return flag;
+            }
+
+            this.index++;
+        }
+
+        return null;
     }
 
     public String nextArgument() {
-        while (this.hasNext() && this.getCurrentArgument().charAt(0) == '-') {
-            this.index++;
-        }
+        String arg = null;
 
-        if (!this.hasNext() || this.getCurrentArgument().charAt(0) == '-') {
+        if (!this.hasNextArgument()) {
             return null;
         }
 
-        String arg = this.getCurrentArgument();
-        this.index++;
-        return arg;
+        if (this.index != 0) {
+            this.index++;
+        }
+
+        while (this.index < this.args.length) {
+            arg = this.args[this.index];
+            if (arg.charAt(0) != '-') {
+                return arg;
+            }
+
+            this.index++;
+        }
+
+        return null;
     }
 }

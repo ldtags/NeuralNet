@@ -12,13 +12,14 @@ import Agent.AgentException;
 
 public class Driver {
     public static void main(String[] args) {
+        Integer hiddenLayerCount = null;
         List<Integer> hiddenLayers = new ArrayList<>();
         ArgumentIterator argIterator = new ArgumentIterator(args);
         String arg = null;
         File file = null;
         Agent agent = new Agent();
 
-        while (argIterator.hasNext()) {
+        while (argIterator.hasNextFlag()) {
             switch (argIterator.nextFlag()) {
             case "-f":
                 arg = argIterator.nextArgument();
@@ -52,7 +53,30 @@ public class Driver {
 
                 break;
             case "-h":
-                while ((arg = argIterator.nextArgument()) != null) {
+                arg = argIterator.nextArgument();
+                if (arg == null) {
+                    System.err.println("-h must be followed by a value");
+                    return;
+                }
+
+                try {
+                    hiddenLayerCount = Integer.parseInt(arg);    
+                } catch (NumberFormatException e) {
+                    System.err.printf("Invalid hidden layer amount: %s\n", arg);
+                    return;
+                }
+
+                for (int i = 0; i < hiddenLayerCount; i++) {
+                    if (!argIterator.hasNextArgument()) {
+                        System.err.printf(
+                            "Missing hidden layer sizes: got %d but expected %d",
+                            i + 1,
+                            hiddenLayerCount
+                        );
+                        return;
+                    }
+
+                    arg = argIterator.nextArgument();
                     try {
                         hiddenLayers.add(Integer.parseInt(arg));
                     } catch (NumberFormatException e) {
@@ -66,7 +90,7 @@ public class Driver {
             case "-a":
                 arg = argIterator.nextArgument();
                 if (arg == null) {
-                    System.err.println("-h must be followed by a value");
+                    System.err.println("-a must be followed by a value");
                     return;
                 }
 

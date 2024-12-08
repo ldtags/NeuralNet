@@ -5,83 +5,111 @@
 package Network;
 
 import java.util.List;
-import java.util.ArrayList;
 
 public class Neuron {
-    private List<Edge> edges = null;
+    private Double input = null;
+    private Double output = null;
+    private Double delta = null;
+    private NeuronType type = null;
+
+    public Neuron(NeuronType type) {
+        this.setType(type);
+    }
 
     public Neuron() {
-        this.edges = new ArrayList<>();
+        this(NeuronType.Hidden);
     }
 
-    public List<Edge> getEdges() {
-        return this.edges;
+    public NeuronType getType() {
+        return this.type;
     }
 
-    public Edge getEdge(Integer index) {
-        return this.getEdges().get(index);
+    public void setType(NeuronType type) {
+        this.type = type;
     }
 
-    public void setEdges(List<Edge> edges) {
-        this.edges = new ArrayList<>(edges);
+    public Double getInput() {
+        return this.input;
     }
 
-    public void setEdge(Integer index, Edge edge) {
-        this.edges.set(index, edge);
+    public void setInput(Double input) throws NetworkException {
+        this.input = input;
+        this.activate();
     }
 
-    public void removeEdgesTo(Neuron neuron) {
-        List<Edge> duplicateEdges = null;
+    public void setInput(List<Double> values, List<Edge> edges) throws NetworkException {
+        Double sum = null;
 
-        if (neuron == null) {
-            return;
+        if (values.size() != edges.size()) {
+            throw new NetworkException("Inequal values and weights");
         }
 
-        duplicateEdges = new ArrayList<>();
-        for (Edge edge : this.getEdges()) {
-            if (edge.getDestination().equals(neuron)) {
-                duplicateEdges.add(edge);
-            }
+        sum = 0.0;
+        for (int i = 0; i < values.size(); i++) {
+            sum += values.get(i) * edges.get(i).getWeight();
         }
 
-        for (Edge edge : duplicateEdges) {
-            this.getEdges().remove(edge);
-        }
+        this.setInput(sum);
     }
 
-    public void addEdge(Edge edge) {
-        this.removeEdgesTo(edge.getDestination());
-        this.edges.add(edge);
+    public Double getOutput() {
+        return this.output;
     }
 
-    public void addEdgeTo(Neuron neuron, Double weight) {
-        this.removeEdgesTo(neuron);
-        this.edges.add(new Edge(this, weight, neuron));
+    public void setOutput(Double output) {
+        this.output = output;
     }
 
-    public Double activate(Double input) {
-        return 1.0 / (1.0 + Math.exp(input));
+    public Double getDelta() {
+        return this.delta;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        Neuron neuron = null;
+    public void setDelta(Double delta) {
+        this.delta = delta;
+    }
 
-        if (!(o instanceof Neuron)) {
-            return false;
+    public void activate() throws NetworkException {
+        if (this.getInput() == null) {
+            throw new NetworkException("Cannot activate neuron before input");
         }
 
-        neuron = (Neuron) o;
-        if (this.getEdges().size() != neuron.getEdges().size()) {
-            return false;
+        this.setOutput(1.0 / (1.0 + Math.exp(this.getInput())));
+    }
+
+    public Double getPrimeActivation() throws NetworkException {
+        if (this.getOutput() == null) {
+            this.activate();
         }
 
-        for (int i = 0; i < this.getEdges().size(); i++) {
-            if (!this.getEdge(i).equals(neuron.getEdge(i))) {
-                return false;
-            }
+        return this.getOutput() * (1 - this.getOutput());
+    }
+
+    public void computeDelta(Integer y) throws NetworkException {
+        if (this.getOutput() == null || this.getInput() == null) {
+            throw new NetworkException("Cannot calculate delta without input or output");
         }
 
-        return true;
+        if (this.type != NeuronType.Output) {
+            throw new NetworkException("Cannot use this formula on a non-output neuron");
+        }
+
+        this.setDelta(this.getPrimeActivation() * (-2.0 * (y - this.getOutput())));
+    }
+
+    public void computeDelta(List<Edge> edges) throws NetworkException {
+        if (this.getOutput() == null || this.getInput() == null) {
+            throw new NetworkException("Cannot calculate delta without input or output");
+        }
+
+        if (this.type != NeuronType.Hidden) {
+            throw new NetworkException("Cannot use this formula on a non-hidden neuron");
+        }
+
+        Double sum = 0.0;
+        for (Edge edge : edges) {
+            sum += edge.getWeight() * edge.getDestination().getDelta();
+        }
+
+        this.setDelta(this.getPrimeActivation() * sum);
     }
 }

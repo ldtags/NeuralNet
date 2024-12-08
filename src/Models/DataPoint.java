@@ -32,6 +32,20 @@ public class DataPoint {
         return this.targets;
     }
 
+    public Integer getDecodedTarget() {
+        Integer index = 0;
+
+        for (Integer target : this.targets) {
+            if (target == 1) {
+                return index + 1;
+            }
+
+            index++;
+        }
+
+        return 0;
+    }
+
     public void setTargets(List<Integer> targets) {
         this.targets = new ArrayList<>(targets);
     }

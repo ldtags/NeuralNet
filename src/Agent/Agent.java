@@ -15,8 +15,9 @@ import java.util.Map;
 import java.util.HashMap;
 
 import Models.DataPoint;
-
+import Network.Edge;
 import Network.Network;
+import Network.NetworkException;
 
 public class Agent {
     private List<Integer> hiddenLayerSizes = null;
@@ -36,6 +37,10 @@ public class Agent {
 
     public List<Integer> getHiddenLayerSizes() {
         return this.hiddenLayerSizes;
+    }
+
+    public Integer getHiddenLayerSize(Integer index) {
+        return this.getHiddenLayerSizes().get(index);
     }
 
     public void setHiddenLayerSizes(List<Integer> hiddenLayers) {
@@ -167,7 +172,8 @@ public class Agent {
         List<Integer> targets = null;
         List<DataPoint> data = new ArrayList<>();
     
-        try{
+        System.out.printf("* Reading %s\n", filename);
+        try {
             reader = new BufferedReader(new FileReader(filename));
             while ((line = reader.readLine()) != null) {
                 line = line.strip();
@@ -241,7 +247,7 @@ public class Agent {
             return new ArrayList<>();
         }
 
-        featureMinimums = data.get(0).getFeatures();
+        featureMinimums = new ArrayList<>(data.get(0).getFeatures());
         for (int i = 1; i < data.size(); i++) {
             features = data.get(i).getFeatures();
             for (int j = 0; j < features.size(); j++) {
@@ -265,7 +271,7 @@ public class Agent {
             return new ArrayList<>();
         }
 
-        featureMaximums = data.get(0).getFeatures();
+        featureMaximums = new ArrayList<>(data.get(0).getFeatures());
         for (int i = 1; i < data.size(); i++) {
             features = data.get(i).getFeatures();
             for (int j = 0; j < features.size(); j++) {
@@ -311,33 +317,270 @@ public class Agent {
      */
     private List<List<DataPoint>> getBatches(List<DataPoint> data) {
         int batchCount, batchNum;
-        List<DataPoint> randomData = null;
+        List<DataPoint> randomData = null, batch = null;
         List<List<DataPoint>> batches = null;
 
-        if (this.getBatchSize() <= 1) {
+        switch (this.getBatchSize()) {
+        // Full-Batch Gradient Descent
+        case 0:
             batches = new ArrayList<>(1);
             batches.add(data);
-            return batches;
-        }
+            break;
 
-        batchCount = Math.ceilDiv(data.size(), this.getBatchSize());
-        batches = new ArrayList<>(batchCount);
-        if (this.randomized) {
-            randomData = new ArrayList<>(data);
-            Collections.shuffle(randomData);
-            data = randomData;
-        }
-
-        for (int i = 0; i < data.size(); i++) {
-            batchNum = Math.floorDiv(i, this.getBatchSize());
-            if (batches.size() <= batchNum) {
-                batches.add(new ArrayList<>());
+        // Stochastic Gradient Descent
+        case 1:
+            batches = new ArrayList<>();
+            for (DataPoint dataPoint : data) {
+                batch = new ArrayList<>();
+                batch.add(dataPoint);
+                batches.add(batch);
             }
 
-            batches.get(batchNum).add(data.get(i));
+            break;
+
+        // Mini-Batch Gradient Descent
+        default:
+            batchCount = Math.ceilDiv(data.size(), this.getBatchSize());
+            batches = new ArrayList<>(batchCount);
+            if (this.randomized) {
+                randomData = new ArrayList<>(data);
+                Collections.shuffle(randomData);
+                data = randomData;
+            }
+
+            for (int i = 0; i < data.size(); i++) {
+                batchNum = Math.floorDiv(i, this.getBatchSize());
+                if (batches.size() <= batchNum) {
+                    batches.add(new ArrayList<>());
+                }
+
+                batches.get(batchNum).add(data.get(i));
+            }
+
+            break;
         }
 
         return batches;
+    }
+
+    private void reportPreTrainingInfo() {
+        if (this.getVerbosity() >= 2) {
+            switch (this.getBatchSize()) {
+            case 0:
+                System.out.println("  * Beginning full-batch gradient descent");
+                break;
+            case 1:
+                System.out.println("  * Beginning stochastic gradient descent");
+                break;
+            default:
+                System.out.println("  * Beginning mini-batch gradient descent");
+                break;
+            }
+
+            System.out.printf(
+                "    (batchSize=%d, epochLimit=%d, learningRate=%.4f, lambda=%.4f)\n",
+                this.getBatchSize(),
+                this.getEpochLimit(),
+                this.getLearningRate(),
+                this.getRegularization()
+            );
+        }
+    }
+
+    private void reportPostTrainingInfo(
+        Long timeElapsed,
+        Integer epochs,
+        Integer iterations,
+        String stopCondition
+    ) {
+        if (this.getVerbosity() >= 2) {
+            System.out.println("  * Done with fitting!");
+            System.out.printf(
+                "    Training took %dms, %d epochs, %d iterations (%.4fms / iteration)\n",
+                timeElapsed,
+                epochs,
+                iterations,
+                (1.0 * timeElapsed) / (1.0 * iterations)
+            );
+            System.out.printf("    GD Stop condition: %s\n", stopCondition);
+        }
+    }
+
+    public Double calculateLoss(Network network, DataPoint dataPoint) {
+        Double sum = 0.0;
+        Integer output = network.getOutput(), actualValue = null;
+        List<Integer> outputClass = dataPoint.getTargets();
+
+        for (int i = 0; i < outputClass.size(); i++) {
+            if (i == output - 1) {
+                actualValue = 1;
+            } else {
+                actualValue = 0;
+            }
+
+            sum += Math.pow(outputClass.get(i) - actualValue, 2);
+        }
+
+        return sum;
+    }
+
+    public Double calculateCost(Network network, List<DataPoint> data) {
+        Double sum = 0.0;
+        if (data.size() == 0) {
+            return sum;
+        }
+
+        for (DataPoint dataPoint : data) {
+            sum += this.calculateLoss(network, dataPoint);
+        }
+
+        return sum / (data.size() * 1.0);
+    }
+
+    public static Double calculateAccuracy(
+        Network network,
+        List<DataPoint> data
+    ) throws NetworkException {
+        Integer totalCorrect = 0;
+        for (DataPoint dataPoint : data) {
+            network.feed(dataPoint.getFeatures());
+            if (dataPoint.getDecodedTarget() == network.getOutput()) {
+                totalCorrect++;
+            }
+        }
+
+        return (1.0 * totalCorrect) / (1.0 * data.size());
+    }
+
+    private void reportEpochTrainingInfo(
+        Network network,
+        Integer epochs,
+        Integer iterations,
+        List<DataPoint> trainingSet
+    ) throws NetworkException {
+        Double lossSum = null;
+
+        if (this.getVerbosity() >= 3) {
+            lossSum = 0.0;
+            for (DataPoint dataPoint : trainingSet) {
+                lossSum += this.calculateLoss(network, dataPoint);
+            }
+
+            System.out.printf(
+                "    After %6d epochs: (%6d iter.): Cost = %.6f; Loss = %.6f; Acc = %.6f\n",
+                epochs,
+                iterations,
+                this.calculateCost(network, trainingSet),
+                lossSum / (1.0 * trainingSet.size()),
+                calculateAccuracy(network, trainingSet)
+            );
+        }
+    }
+
+    private void trainNetwork(
+        Network network,
+        List<DataPoint> trainingSet
+    ) throws NetworkException {
+        Integer t = 0, epochs = 0;
+        Long startTime = null;
+        Double sum = null, regFactor = null;
+        String stopCondition = "Epoch Limit";
+        List<List<DataPoint>> batches = null;
+        Map<Edge, Double> sumStore = null;
+        Map<DataPoint, Map<Edge, Double>> valueStore = new HashMap<>();
+
+        this.reportPreTrainingInfo();
+        startTime = System.currentTimeMillis();
+        while (epochs < this.getEpochLimit()) {
+            batches = this.getBatches(trainingSet);
+            for (List<DataPoint> batch : batches) {
+                for (DataPoint dataPoint : batch) {
+                    network.backpropagate(
+                        dataPoint.getFeatures(),
+                        dataPoint.getDecodedTarget()
+                    );
+
+                    sumStore = new HashMap<>();
+                    for (Edge edge : network.getEdges()) {
+                        sumStore.put(
+                            edge,
+                            edge.getSource().getOutput() * edge.getDestination().getDelta()
+                        );
+                    }
+
+                    valueStore.put(dataPoint, sumStore);
+                }
+
+                for (Edge edge : network.getEdges()) {
+                    sum = 0.0;
+                    for (DataPoint dataPoint : batch) {
+                        sum += valueStore.get(dataPoint).get(edge);
+                    }
+
+                    sum *= 1.0 / batch.size();
+                    sum *= this.learningRate;
+                    regFactor = 2
+                        * this.getLearningRate()
+                        * this.getRegularization()
+                        * edge.getWeight();
+
+                    edge.setWeight(edge.getWeight() - sum - regFactor);
+                }
+
+                t++;
+            }
+
+            epochs++;
+            if (epochs % ((1.0 * this.getEpochLimit()) / 10.0) == 0) {
+                this.reportEpochTrainingInfo(network, epochs, t, trainingSet);
+            }
+        }
+
+        this.reportPostTrainingInfo(
+            System.currentTimeMillis() - startTime,
+            epochs,
+            t,
+            stopCondition
+        );
+    }
+
+    private void reportNetworkInfo() {
+        if (this.getVerbosity() > 1) {
+            System.out.println("  * Layer sizes (excluding bias neuron(s)):");
+            System.out.printf(
+                "    Layer  1 (input) : %3d\n",
+                this.getNumberOfFeatures()
+            );
+            for (int i = 0; i < this.getHiddenLayerSizes().size(); i++) {
+                System.out.printf(
+                    "    Layer %2d (hidden): %3d\n",
+                    i + 2,
+                    this.getHiddenLayerSize(i)
+                );
+            }
+            System.out.printf(
+                "    Layer %2d (output): %3d\n",
+                this.getHiddenLayerSizes().size() + 2,
+                this.getNumberOfClasses()
+            );
+        }
+    }
+
+    public void reportFeatureInfo(
+        List<Double> featureMinimums,
+        List<Double> featureMaximums
+    ) {
+        if (this.getVerbosity() > 1) {
+            System.out.println("  * min/max values on training set:");
+            for (int i = 0; i < this.getNumberOfFeatures(); i++) {
+                System.out.printf(
+                    "    Feature %d: %.3f, %.3f\n",
+                    i + 1,
+                    featureMinimums.get(i),
+                    featureMaximums.get(i)
+                );
+            }
+        }
     }
 
     public void start() throws AgentException {
@@ -350,6 +593,7 @@ public class Agent {
             throw new AgentException("No data found, please load data into agent");
         }
 
+        System.out.println("* Doing train/validation split");
         splitData = splitDataPoints(this.getData(), this.getRandomization());
         if (!splitData.containsKey("training") || !splitData.containsKey("validation")) {
             throw new AgentException("An error occurred while splitting input data");
@@ -358,16 +602,39 @@ public class Agent {
         trainingSet = splitData.get("training");
         validationSet = splitData.get("validation");
 
+        System.out.println("* Scaling features");
         featureMinimums = getFeatureMinimums(trainingSet);
         featureMaximums = getFeatureMaximums(trainingSet);
+        this.reportFeatureInfo(featureMinimums, featureMaximums);
+
         scaleDataSet(trainingSet, featureMinimums, featureMaximums);
         scaleDataSet(validationSet, featureMinimums, featureMaximums);
 
-        network = new Network(
-            this.getNumberOfFeatures(),
-            this.getNumberOfClasses(),
-            this.getHiddenLayerSizes(),
-            this.getWeightInitialization()
-        );
+        try {
+            System.out.println("* Building network");
+            this.reportNetworkInfo();
+            network = new Network(
+                this.getNumberOfFeatures(),
+                this.getNumberOfClasses(),
+                this.getHiddenLayerSizes(),
+                this.getWeightInitialization(),
+                this.getVerbosity()
+            );
+
+            System.out.printf("* Training network (using %d examples)\n", trainingSet.size());
+            this.trainNetwork(network, trainingSet);
+
+            System.out.println("* Evaluating accuracy");
+            System.out.printf(
+                "  TrainAcc: %.6f\n",
+                calculateAccuracy(network, trainingSet)
+            );
+            System.out.printf(
+                "  ValidAcc: %.6f\n",
+                calculateAccuracy(network, validationSet)
+            );
+        } catch (NetworkException e) {
+            throw new AgentException(e.getMessage());
+        }
     }
 }
