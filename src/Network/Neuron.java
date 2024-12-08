@@ -73,7 +73,11 @@ public class Neuron {
             throw new NetworkException("Cannot activate neuron before input");
         }
 
-        this.setOutput(1.0 / (1.0 + Math.exp(this.getInput())));
+        if (this.type == NeuronType.Input) {
+            this.setOutput(this.getInput());
+        } else {
+            this.setOutput(1.0 / (1.0 + Math.exp(this.getInput())));
+        }
     }
 
     public Double getPrimeActivation() throws NetworkException {

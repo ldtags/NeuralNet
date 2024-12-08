@@ -9,11 +9,11 @@ import java.util.ArrayList;
 
 public class DataPoint {
     private List<Double> features = null;
-    private List<Integer> targets = null;
+    private List<Integer> outputClass = null;
 
     public DataPoint(List<Double> features, List<Integer> targets) {
         this.setFeatures(features);
-        this.setTargets(targets);
+        this.setOutputClass(targets);
     }
 
     public List<Double> getFeatures() {
@@ -28,14 +28,14 @@ public class DataPoint {
         this.features.set(index, feature);
     }
 
-    public List<Integer> getTargets() {
-        return this.targets;
+    public List<Integer> getOutputClass() {
+        return this.outputClass;
     }
 
-    public Integer getDecodedTarget() {
+    public Integer getDecodedOutputClass() {
         Integer index = 0;
 
-        for (Integer target : this.targets) {
+        for (Integer target : this.outputClass) {
             if (target == 1) {
                 return index + 1;
             }
@@ -46,7 +46,7 @@ public class DataPoint {
         return 0;
     }
 
-    public void setTargets(List<Integer> targets) {
-        this.targets = new ArrayList<>(targets);
+    public void setOutputClass(List<Integer> outputClass) {
+        this.outputClass = new ArrayList<>(outputClass);
     }
 }

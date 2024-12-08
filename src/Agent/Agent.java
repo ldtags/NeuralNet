@@ -149,9 +149,9 @@ public class Agent {
             return 0;
         }
 
-        classMax = dataSet.get(0).getTargets().size();
+        classMax = dataSet.get(0).getOutputClass().size();
         for (int i = 1; i < dataSet.size(); i++) {
-            size = dataSet.get(i).getTargets().size();
+            size = dataSet.get(i).getOutputClass().size();
             if (size > classMax) {
                 classMax = size;
             }
@@ -368,7 +368,7 @@ public class Agent {
 
     public static Double calculateLoss(Network network, DataPoint dataPoint) {
         Double sum = 0.0, actualOutput = null;
-        List<Integer> outputClass = dataPoint.getTargets();
+        List<Integer> outputClass = dataPoint.getOutputClass();
 
         for (int i = 0; i < outputClass.size(); i++) {
             actualOutput = network.getOutputLayer().get(i).getOutput();
@@ -405,7 +405,7 @@ public class Agent {
         Integer totalCorrect = 0;
         for (DataPoint dataPoint : data) {
             network.feed(dataPoint.getFeatures());
-            if (dataPoint.getDecodedTarget() == network.getOutput()) {
+            if (dataPoint.getDecodedOutputClass() == network.getOutput()) {
                 totalCorrect++;
             }
         }
@@ -588,7 +588,7 @@ public class Agent {
         Network network,
         List<DataPoint> trainingSet
     ) throws NetworkException {
-        Integer t = 0, epochs = 0;
+        Integer t = 0, epochs = 0, exampleNumber = 1;
         Long startTime = null;
         Double sum = null, regFactor = null;
         String stopCondition = "Epoch Limit";
@@ -604,13 +604,13 @@ public class Agent {
                 for (DataPoint dataPoint : batch) {
                     network.backpropagate(
                         dataPoint.getFeatures(),
-                        dataPoint.getDecodedTarget()
+                        dataPoint.getOutputClass()
                     );
 
                     this.reportNetworkState(
                         network,
-                        batch.indexOf(dataPoint),
-                        dataPoint.getTargets()
+                        exampleNumber,
+                        dataPoint.getOutputClass()
                     );
 
                     sumStore = new HashMap<>();
@@ -622,6 +622,7 @@ public class Agent {
                     }
 
                     valueStore.put(dataPoint, sumStore);
+                    exampleNumber++;
                 }
 
                 for (Edge edge : network.getEdges()) {
@@ -643,7 +644,8 @@ public class Agent {
             }
 
             epochs++;
-            if (epochs % ((1.0 * this.getEpochLimit()) / 10.0) == 0) {
+            if (this.getEpochLimit() < 10
+                    || epochs % ((1.0 * this.getEpochLimit()) / 10.0) == 0) {
                 this.reportEpochTrainingInfo(network, epochs, t, trainingSet);
             }
         }

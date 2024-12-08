@@ -312,7 +312,10 @@ public class Network {
         }
     }
 
-    public void backpropagate(List<Double> inputs, Integer target) throws NetworkException {
+    public void backpropagate(
+        List<Double> inputs,
+        List<Integer> outputClass
+    ) throws NetworkException {
         if (inputs.size() != this.getInputLayer().size()) {
             throw new NetworkException(
                 String.format(
@@ -328,7 +331,7 @@ public class Network {
 
         /* Backward Propagating */
         for (int i = 0; i < this.getOutputLayer().size(); i++) {
-            this.getOutputLayer().get(i).computeDelta(target);
+            this.getOutputLayer().get(i).computeDelta(outputClass.get(i));
         }
 
         for (int i = this.getHiddenLayers().size() - 1; i >= 0; i--) {
