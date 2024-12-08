@@ -363,7 +363,52 @@ public class Agent {
         return batches;
     }
 
-    private void reportPreTrainingInfo() {
+    public static Double calculateLoss(Network network, DataPoint dataPoint) {
+        Double sum = 0.0, actualOutput = null;
+        List<Integer> outputClass = dataPoint.getTargets();
+
+        for (int i = 0; i < outputClass.size(); i++) {
+            actualOutput = network.getOutputLayer().get(i).getOutput();
+            sum += Math.pow(outputClass.get(i) - actualOutput, 2);
+        }
+
+        return sum;
+    }
+
+    private static Double calculateCost(Network network, List<DataPoint> data) {
+        Double sum = 0.0;
+        if (data.size() == 0) {
+            return sum;
+        }
+
+        for (DataPoint dataPoint : data) {
+            sum += calculateLoss(network, dataPoint);
+        }
+
+        return sum / (data.size() * 1.0);
+    }
+
+    private static Double calculateAccuracy(
+        Network network,
+        List<DataPoint> data
+    ) throws NetworkException {
+        Integer totalCorrect = 0;
+        for (DataPoint dataPoint : data) {
+            network.feed(dataPoint.getFeatures());
+            if (dataPoint.getDecodedTarget() == network.getOutput()) {
+                totalCorrect++;
+            }
+        }
+
+        return (1.0 * totalCorrect) / (1.0 * data.size());
+    }
+
+    private void reportPreTrainingInfo(
+        Network network,
+        List<DataPoint> data
+    ) throws NetworkException {
+        Double lossSum = null;
+
         if (this.getVerbosity() >= 2) {
             switch (this.getBatchSize()) {
             case 0:
@@ -383,6 +428,24 @@ public class Agent {
                 this.getEpochLimit(),
                 this.getLearningRate(),
                 this.getRegularization()
+            );
+        }
+
+        if (this.getVerbosity() >= 3) {
+            for (DataPoint dataPoint : data) {
+                network.feed(dataPoint.getFeatures());
+            }
+
+            lossSum = 0.0;
+            for (DataPoint dataPoint : data) {
+                lossSum += calculateLoss(network, dataPoint);
+            }
+
+            System.out.printf(
+                "    Initial model with random weights : Cost = %.6f; Loss = %.6f; Acc = %.4f\n",
+                calculateCost(network, data),
+                lossSum / (1.0 * data.size()),
+                calculateAccuracy(network, data)
             );
         }
     }
@@ -406,73 +469,27 @@ public class Agent {
         }
     }
 
-    public Double calculateLoss(Network network, DataPoint dataPoint) {
-        Double sum = 0.0;
-        Integer output = network.getOutput(), actualValue = null;
-        List<Integer> outputClass = dataPoint.getTargets();
-
-        for (int i = 0; i < outputClass.size(); i++) {
-            if (i == output - 1) {
-                actualValue = 1;
-            } else {
-                actualValue = 0;
-            }
-
-            sum += Math.pow(outputClass.get(i) - actualValue, 2);
-        }
-
-        return sum;
-    }
-
-    public Double calculateCost(Network network, List<DataPoint> data) {
-        Double sum = 0.0;
-        if (data.size() == 0) {
-            return sum;
-        }
-
-        for (DataPoint dataPoint : data) {
-            sum += this.calculateLoss(network, dataPoint);
-        }
-
-        return sum / (data.size() * 1.0);
-    }
-
-    public static Double calculateAccuracy(
-        Network network,
-        List<DataPoint> data
-    ) throws NetworkException {
-        Integer totalCorrect = 0;
-        for (DataPoint dataPoint : data) {
-            network.feed(dataPoint.getFeatures());
-            if (dataPoint.getDecodedTarget() == network.getOutput()) {
-                totalCorrect++;
-            }
-        }
-
-        return (1.0 * totalCorrect) / (1.0 * data.size());
-    }
-
     private void reportEpochTrainingInfo(
         Network network,
         Integer epochs,
         Integer iterations,
-        List<DataPoint> trainingSet
+        List<DataPoint> data
     ) throws NetworkException {
         Double lossSum = null;
 
         if (this.getVerbosity() >= 3) {
             lossSum = 0.0;
-            for (DataPoint dataPoint : trainingSet) {
-                lossSum += this.calculateLoss(network, dataPoint);
+            for (DataPoint dataPoint : data) {
+                lossSum += calculateLoss(network, dataPoint);
             }
 
             System.out.printf(
-                "    After %6d epochs: (%6d iter.): Cost = %.6f; Loss = %.6f; Acc = %.6f\n",
+                "    After %6d epochs (%6d iter.): Cost = %.6f; Loss = %.6f; Acc = %.4f\n",
                 epochs,
                 iterations,
-                this.calculateCost(network, trainingSet),
-                lossSum / (1.0 * trainingSet.size()),
-                calculateAccuracy(network, trainingSet)
+                calculateCost(network, data),
+                lossSum / (1.0 * data.size()),
+                calculateAccuracy(network, data)
             );
         }
     }
@@ -489,7 +506,7 @@ public class Agent {
         Map<Edge, Double> sumStore = null;
         Map<DataPoint, Map<Edge, Double>> valueStore = new HashMap<>();
 
-        this.reportPreTrainingInfo();
+        this.reportPreTrainingInfo(network, trainingSet);
         startTime = System.currentTimeMillis();
         while (epochs < this.getEpochLimit()) {
             batches = this.getBatches(trainingSet);
@@ -517,8 +534,7 @@ public class Agent {
                         sum += valueStore.get(dataPoint).get(edge);
                     }
 
-                    sum *= 1.0 / batch.size();
-                    sum *= this.learningRate;
+                    sum = this.learningRate * (sum / (1.0 * batch.size()));
                     regFactor = 2
                         * this.getLearningRate()
                         * this.getRegularization()
