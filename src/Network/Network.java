@@ -134,6 +134,10 @@ public class Network {
 
     public Double getRandomInitialWeight() {
         Double initialWeight = this.getInitialWeight();
+        if (initialWeight == 0.0) {
+            return 0.0;
+        }
+
         return ThreadLocalRandom.current().nextDouble(0 - initialWeight, initialWeight);
     }
 
