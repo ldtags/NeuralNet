@@ -16,6 +16,7 @@ import java.util.HashMap;
 
 import Models.DataPoint;
 import Network.Edge;
+import Network.Neuron;
 import Network.Network;
 import Network.NetworkException;
 
@@ -92,8 +93,10 @@ public class Agent {
     }
 
     public void setWeightInitialization(Double weight) throws AgentException {
-        if (weight <= 0) {
-            throw new AgentException("Weight initializer must be a positive integer");
+        if (weight < 0) {
+            throw new AgentException(
+                "Weight initializer must be a non-negative integer"
+            );
         }
 
         this.weightInit = weight;
@@ -501,6 +504,86 @@ public class Agent {
         }
     }
 
+    private void reportNetworkState(
+        Network network,
+        Integer exampleNumber,
+        List<Integer> actual
+    ) {
+        if (this.getVerbosity() >= 4) {
+            System.out.printf(
+                "    * Forward Propagation on example %d\n",
+                exampleNumber
+            );
+
+            System.out.printf("      Layer 1 (input) : %7s", "a_j: ");
+            System.out.printf("%2.3f ", 1.0);
+            for (Neuron neuron : network.getInputLayer()) {
+                System.out.printf("%2.3f ", neuron.getOutput());
+            }
+            System.out.println();
+
+            for (int i = 0; i < network.getHiddenLayers().size(); i++) {
+                System.out.printf("      Layer %d (hidden): %7s", i + 2, "in_j: ");
+                for (Neuron neuron : network.getHiddenLayer(i)) {
+                    System.out.printf("%2.3f ", neuron.getInput());
+                }
+                System.out.println();
+
+                System.out.printf("                        %7s", "a_j: ");
+                for (Neuron neuron : network.getHiddenLayer(i)) {
+                    System.out.printf("%2.3f ", neuron.getOutput());
+                }
+                System.out.println();
+            }
+
+            System.out.printf(
+                "      Layer %d (output): %7s",
+                network.getHiddenLayers().size() + 2,
+                "in_j: "
+            );
+            for (Neuron neuron : network.getOutputLayer()) {
+                System.out.printf("%2.3f ", neuron.getInput());
+            }
+            System.out.println();
+
+            System.out.printf("                        %7s", "a_j: ");
+            for (Neuron neuron : network.getOutputLayer()) {
+                System.out.printf("%2.3f ", neuron.getOutput());
+            }
+            System.out.println();
+
+            System.out.print("           example's actual y: ");
+            for (Integer value : actual) {
+                System.out.printf("%2.3f ", value * 1.0);
+            }
+            System.out.println();
+
+            System.out.printf(
+                "    * Backward Propagation on example %d\n",
+                exampleNumber
+            );
+
+            System.out.printf(
+                "      Layer %d (output): %7s",
+                network.getHiddenLayers().size() + 2,
+                "Delta_j: "
+            );
+            for (Neuron neuron : network.getOutputLayer()) {
+                System.out.printf("%2.3f ", neuron.getDelta());
+            }
+            System.out.println();
+
+            for (int i = network.getHiddenLayers().size() - 1; i >= 0; i--) {
+                System.out.printf("      Layer %d (hidden): %7s", i + 2, "Delta_j: ");
+                for (Neuron neuron : network.getHiddenLayer(i)) {
+                    System.out.printf("%2.3f ", neuron.getDelta());
+                }
+                System.out.println();
+            }
+            System.out.println();
+        }
+    }
+
     private void trainNetwork(
         Network network,
         List<DataPoint> trainingSet
@@ -522,6 +605,12 @@ public class Agent {
                     network.backpropagate(
                         dataPoint.getFeatures(),
                         dataPoint.getDecodedTarget()
+                    );
+
+                    this.reportNetworkState(
+                        network,
+                        batch.indexOf(dataPoint),
+                        dataPoint.getTargets()
                     );
 
                     sumStore = new HashMap<>();
