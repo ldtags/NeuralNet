@@ -375,8 +375,9 @@ public class Agent {
         return sum;
     }
 
-    private static Double calculateCost(Network network, List<DataPoint> data) {
-        Double sum = 0.0;
+    private Double calculateCost(Network network, List<DataPoint> data) {
+        Double sum = 0.0, regFactor = null;
+
         if (data.size() == 0) {
             return sum;
         }
@@ -385,7 +386,13 @@ public class Agent {
             sum += calculateLoss(network, dataPoint);
         }
 
-        return sum / (data.size() * 1.0);
+        regFactor = 0.0;
+        for (Edge edge : network.getEdges()) {
+            regFactor += Math.pow(edge.getWeight(), 2);
+        }
+
+        regFactor *= this.getRegularization();
+        return sum / (data.size() * 1.0) + regFactor;
     }
 
     private static Double calculateAccuracy(
@@ -443,7 +450,7 @@ public class Agent {
 
             System.out.printf(
                 "    Initial model with random weights : Cost = %.6f; Loss = %.6f; Acc = %.4f\n",
-                calculateCost(network, data),
+                this.calculateCost(network, data),
                 lossSum / (1.0 * data.size()),
                 calculateAccuracy(network, data)
             );
@@ -487,7 +494,7 @@ public class Agent {
                 "    After %6d epochs (%6d iter.): Cost = %.6f; Loss = %.6f; Acc = %.4f\n",
                 epochs,
                 iterations,
-                calculateCost(network, data),
+                this.calculateCost(network, data),
                 lossSum / (1.0 * data.size()),
                 calculateAccuracy(network, data)
             );
