@@ -129,7 +129,6 @@ public class Neuron {
         }
 
         this.setInput(sum);
-        this.activate();
     }
 
     public Function<Double, Double> getActivationFunction() {
