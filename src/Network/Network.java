@@ -164,20 +164,14 @@ public class Network {
      * Edge weights are set to 1.
      */
     private void updateBiasNeuron() {
-        for (List<Neuron> hiddenLayer : this.getHiddenLayers()) {
-            for (Neuron neuron : hiddenLayer) {
-                // this.getBiasNeuron().addEdgeTo(neuron, 1.0);
+        for (List<Neuron> layer : this.getLayers()) {
+            for (Neuron neuron : layer) {
                 this.addEdge(
                     this.getRandomInitialWeight(),
                     this.getBiasNeuron(),
                     neuron
                 );
             }
-        }
-
-        for (Neuron neuron : this.getOutputLayer()) {
-            // this.getBiasNeuron().addEdgeTo(neuron, 1.0);
-            this.addEdge(this.getRandomInitialWeight(), this.getBiasNeuron(), neuron);
         }
     }
 
@@ -189,7 +183,6 @@ public class Network {
     private void initializeBiasNeuron() throws NetworkException {
         Neuron biasNeuron = new Neuron(NeuronType.Input);
         biasNeuron.setInput(1.0);
-        biasNeuron.setOutput(1.0);
         this.setBiasNeuron(biasNeuron);
     }
 

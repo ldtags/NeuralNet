@@ -76,7 +76,7 @@ public class Neuron {
         if (this.type == NeuronType.Input) {
             this.setOutput(this.getInput());
         } else {
-            this.setOutput(1.0 / (1.0 + Math.exp(this.getInput())));
+            this.setOutput(1.0 / (1.0 + Math.exp(-1.0 * this.getInput())));
         }
     }
 
