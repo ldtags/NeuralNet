@@ -122,6 +122,9 @@ public class Agent {
         this.data = new ArrayList<>(data);
     }
 
+    /**
+     * @return The number of features in the currently loaded data set.
+     */
     public Integer getNumberOfFeatures() {
         List<DataPoint> dataSet = this.getData();
         Integer featureMax = null, size = null;
@@ -141,6 +144,9 @@ public class Agent {
         return featureMax;
     }
 
+    /**
+     * @return The number of output classes in the currently loaded data set.
+     */
     public Integer getNumberOfClasses() {
         List<DataPoint> dataSet = this.getData();
         Integer classMax = null, size = null;
@@ -160,6 +166,13 @@ public class Agent {
         return classMax;
     }
 
+    /**
+     * Cleans raw input data vectors.
+     * 
+     * @param rawData The input vector from the data file.
+     * 
+     * @return The cleaned input vector (a whitespace delimmitted list of values).
+     */
     private static String cleanRawData(String rawData) {
         return rawData
             .replace("(", "")
@@ -167,7 +180,24 @@ public class Agent {
             .strip();
     }
 
-    public void loadData(String filename) throws FileNotFoundException, IOException, NumberFormatException {
+    /**
+     * Loads data from the file at filePath into the agent.
+     * 
+     * This will overwrite any existing data.
+     * 
+     * @param filePath Path to the data file (relative or absolute)
+     * 
+     * @throws FileNotFoundException No file exists at filePath.
+     * @throws IOException An issue occurred while reading the file.
+     * @throws NumberFormatException The data in the file is not formatted properly.
+     */
+    public void loadData(
+        String filePath
+    ) throws
+        FileNotFoundException,
+        IOException,
+        NumberFormatException
+    {
         String line = null, featureString = null, targetString = null;
         Integer index = null;
         BufferedReader reader = null;
@@ -175,9 +205,9 @@ public class Agent {
         List<Integer> targets = null;
         List<DataPoint> data = new ArrayList<>();
     
-        System.out.printf("* Reading %s\n", filename);
+        System.out.printf("* Reading %s\n", filePath);
         try {
-            reader = new BufferedReader(new FileReader(filename));
+            reader = new BufferedReader(new FileReader(filePath));
             while ((line = reader.readLine()) != null) {
                 line = line.strip();
                 if (line.length() == 0 || line.charAt(0) == '#') {
@@ -222,6 +252,7 @@ public class Agent {
      * 
      * @param data : List of data points being split.
      * @param randomize : Specifies if the order of the data set should be randomized.
+     * 
      * @return Mapping of training and validation sets to the respective keywords
      *      "training" and "validation".
      */
@@ -242,6 +273,13 @@ public class Agent {
         return splitData;
     }
 
+    /**
+     * Finds the minimum value of each feature in a given data set.
+     * 
+     * @param data The data set being searched.
+     * 
+     * @return The list of minimum feature values.
+     */
     private static List<Double> getFeatureMinimums(List<DataPoint> data) {
         Double feature = null;
         List<Double> features = null, featureMinimums = null;
@@ -266,6 +304,13 @@ public class Agent {
         return featureMinimums;
     }
 
+    /**
+     * Finds the maximum value of each feature in a given data set.
+     * 
+     * @param data The data set being searched.
+     * 
+     * @return The list of maximum feature values.
+     */
     private static List<Double> getFeatureMaximums(List<DataPoint> data) {
         Double feature = null;
         List<Double> features = null, featureMaximums = null;
@@ -290,7 +335,20 @@ public class Agent {
         return featureMaximums;
     }
 
-    private static void scaleDataSet(List<DataPoint> data, List<Double> featureMinimums, List<Double> featureMaximums) {
+    /**
+     * Scales a given data set so that all values are within the range [-1, 1].
+     * 
+     * @param data The data set being scaled.
+     * @param featureMinimums The minimum values of each feature in the currently
+     *  loaded data set.
+     * @param featureMaximums The maximum values of each feature in the currently
+     *  loaded data set.
+     */
+    private static void scaleDataSet(
+        List<DataPoint> data,
+        List<Double> featureMinimums,
+        List<Double> featureMaximums
+    ) {
         Double min = null, max = null, scalar = null;
         List<Double> features = null;
 
@@ -432,6 +490,17 @@ public class Agent {
         return avgLoss + regTerm;
     }
 
+    /**
+     * Calculates the output class prediction accuracy of the network on a given
+     *  data set.
+     * 
+     * @param network The network being used to calculate accuracy.
+     * @param data The data set.
+     * 
+     * @return The calculated accuracy.
+     * 
+     * @throws NetworkException An error occurred while interacting with the network.
+     */
     private static Double calculateAccuracy(
         Network network,
         List<DataPoint> data
@@ -447,6 +516,15 @@ public class Agent {
         return (1.0 * totalCorrect) / (1.0 * data.size());
     }
 
+    /**
+     * Calculates the dot product of two vectors.
+     * 
+     * @param v1 Vector 1.
+     * @param v2 Vector 2.
+     * 
+     * @return The dot product of v1 and v2 if both vectors are the same size,
+     *  otherwise null.
+     */
     private static Double calculateDotProduct(List<Double> v1, List<Double> v2) {
         Double sum = null;
 
@@ -462,6 +540,15 @@ public class Agent {
         return sum;
     }
 
+    /**
+     * Finds the maximum absolute error of the output class predictions of the network
+     *  on a given data entry.
+     * 
+     * @param network The network being used to calculate the absolute errors.
+     * @param dataPoint The data entry.
+     * 
+     * @return The maximum absolute error.
+     */
     private static Double getMaxAbsoluteError(Network network, DataPoint dataPoint) {
         Integer predicted = null;
         Double maxAbsoluteError = null, absoluteError = null, actual = null;
@@ -479,6 +566,15 @@ public class Agent {
         return maxAbsoluteError;
     }
 
+    /**
+     * Reports the gradient descent type, hyperparameter values and initial network
+     *  analytics.
+     * 
+     * @param network The network being reported on.
+     * @param data The data set being used to calculate network analytics.
+     * 
+     * @throws NetworkException An error occurred while interacting with the network.
+     */
     private void reportPreTrainingInfo(
         Network network,
         List<DataPoint> data
@@ -515,6 +611,14 @@ public class Agent {
         }
     }
 
+    /**
+     * Reports the gradient descent analytics after the network has been trained.
+     * 
+     * @param timeElapsed The total time elapsed.
+     * @param epochs The total number of epochs that occurred.
+     * @param iterations The total number of iterations that occurred.
+     * @param stopCondition The reason why training finished.
+     */
     private void reportPostTrainingInfo(
         Long timeElapsed,
         Integer epochs,
@@ -534,6 +638,15 @@ public class Agent {
         }
     }
 
+    /**
+     * Reports the gradient descent and network analytics during training.
+     * 
+     * @param network The network being trained.
+     * @param epochs The total number of epochs that have occurred up to this point.
+     * @param iterations The total number of iterations that have occurred up to this
+     *  point.
+     * @param data The data set being used to train the network.
+     */
     private void reportEpochTrainingInfo(
         Network network,
         Integer epochs,
@@ -559,6 +672,13 @@ public class Agent {
         }
     }
 
+    /**
+     * Reports the current state of the network during training.
+     * 
+     * @param network The network being trained.
+     * @param exampleNumber The index of the current data entry.
+     * @param actual The expected output of the network.
+     */
     private void reportNetworkState(
         Network network,
         Integer exampleNumber,
@@ -639,6 +759,62 @@ public class Agent {
         }
     }
 
+    /**
+     * Reports information about the network structure.
+     */
+    private void reportNetworkInfo() {
+        if (this.getVerbosity() > 1) {
+            System.out.println("  * Layer sizes (excluding bias neuron(s)):");
+            System.out.printf(
+                "    Layer  1 (input) : %3d\n",
+                this.getNumberOfFeatures()
+            );
+            for (int i = 0; i < this.getHiddenLayerSizes().size(); i++) {
+                System.out.printf(
+                    "    Layer %2d (hidden): %3d\n",
+                    i + 2,
+                    this.getHiddenLayerSize(i)
+                );
+            }
+            System.out.printf(
+                "    Layer %2d (output): %3d\n",
+                this.getHiddenLayerSizes().size() + 2,
+                this.getNumberOfClasses()
+            );
+        }
+    }
+
+    /**
+     * Reports the minimum and maximum value of each feature in the data set.
+     * 
+     * @param featureMinimums The minimum value of each feature.
+     * @param featureMaximums The maximum value of each feature.
+     */
+    public void reportFeatureInfo(
+        List<Double> featureMinimums,
+        List<Double> featureMaximums
+    ) {
+        if (this.getVerbosity() > 1) {
+            System.out.println("  * min/max values on training set:");
+            for (int i = 0; i < this.getNumberOfFeatures(); i++) {
+                System.out.printf(
+                    "    Feature %d: %.3f, %.3f\n",
+                    i + 1,
+                    featureMinimums.get(i),
+                    featureMaximums.get(i)
+                );
+            }
+        }
+    }
+
+    /**
+     * Trains the network on a given data set.
+     * 
+     * @param network The network being trained.
+     * @param trainingSet The data set being used to train the network.
+     * 
+     * @throws NetworkException An error occurred while interacting with the network.
+     */
     private void trainNetwork(
         Network network,
         List<DataPoint> trainingSet
@@ -724,45 +900,13 @@ public class Agent {
         );
     }
 
-    private void reportNetworkInfo() {
-        if (this.getVerbosity() > 1) {
-            System.out.println("  * Layer sizes (excluding bias neuron(s)):");
-            System.out.printf(
-                "    Layer  1 (input) : %3d\n",
-                this.getNumberOfFeatures()
-            );
-            for (int i = 0; i < this.getHiddenLayerSizes().size(); i++) {
-                System.out.printf(
-                    "    Layer %2d (hidden): %3d\n",
-                    i + 2,
-                    this.getHiddenLayerSize(i)
-                );
-            }
-            System.out.printf(
-                "    Layer %2d (output): %3d\n",
-                this.getHiddenLayerSizes().size() + 2,
-                this.getNumberOfClasses()
-            );
-        }
-    }
-
-    public void reportFeatureInfo(
-        List<Double> featureMinimums,
-        List<Double> featureMaximums
-    ) {
-        if (this.getVerbosity() > 1) {
-            System.out.println("  * min/max values on training set:");
-            for (int i = 0; i < this.getNumberOfFeatures(); i++) {
-                System.out.printf(
-                    "    Feature %d: %.3f, %.3f\n",
-                    i + 1,
-                    featureMinimums.get(i),
-                    featureMaximums.get(i)
-                );
-            }
-        }
-    }
-
+    /**
+     * Constructs, trains and evaluates a feedforward neural network based on the
+     *  currently loaded data set and hyperparameters.
+     * 
+     * @throws AgentException An error occurred while building, training or evaluating
+     *  the network.
+     */
     public void start() throws AgentException {
         Network network = null;
         Map<String, List<DataPoint>> splitData = null;
