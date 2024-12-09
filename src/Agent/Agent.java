@@ -584,23 +584,41 @@ public class Agent {
         }
     }
 
+    private static Double calculateDotProduct(List<Double> v1, List<Double> v2) {
+        Double sum = null;
+
+        if (v1.size() != v2.size()) {
+            return null;
+        }
+
+        sum = 0.0;
+        for (int i = 0; i < v1.size(); i++) {
+            sum += v1.get(i) * v2.get(i);
+        }
+
+        return sum;
+    }
+
     private void trainNetwork(
         Network network,
         List<DataPoint> trainingSet
     ) throws NetworkException {
         Integer t = 0, epochs = 0, exampleNumber = 1;
         Long startTime = null;
-        Double sum = null, regFactor = null;
         String stopCondition = "Epoch Limit";
         List<List<DataPoint>> batches = null;
-        Map<Edge, Double> sumStore = null;
-        Map<DataPoint, Map<Edge, Double>> valueStore = new HashMap<>();
 
         this.reportPreTrainingInfo(network, trainingSet);
         startTime = System.currentTimeMillis();
         while (epochs < this.getEpochLimit()) {
             batches = this.getBatches(trainingSet);
             for (List<DataPoint> batch : batches) {
+                /* Initialize empty caches */
+                for (Edge edge : network.getEdges()) {
+                    edge.clearCaches();
+                }
+
+                /* Calculating delta_j and a_i values via backpropagation */
                 for (DataPoint dataPoint : batch) {
                     network.backpropagate(
                         dataPoint.getFeatures(),
@@ -609,35 +627,32 @@ public class Agent {
 
                     this.reportNetworkState(
                         network,
-                        exampleNumber,
+                        exampleNumber++,
                         dataPoint.getOutputClass()
                     );
-
-                    sumStore = new HashMap<>();
-                    for (Edge edge : network.getEdges()) {
-                        sumStore.put(
-                            edge,
-                            edge.getSource().getOutput() * edge.getDestination().getDelta()
-                        );
-                    }
-
-                    valueStore.put(dataPoint, sumStore);
-                    exampleNumber++;
                 }
 
+                /* Updating edge weights via gradient descent */
                 for (Edge edge : network.getEdges()) {
-                    sum = 0.0;
-                    for (DataPoint dataPoint : batch) {
-                        sum += valueStore.get(dataPoint).get(edge);
-                    }
-
-                    sum = this.learningRate * (sum / (1.0 * batch.size()));
-                    regFactor = 2
-                        * this.getLearningRate()
-                        * this.getRegularization()
-                        * edge.getWeight();
-
-                    edge.setWeight(edge.getWeight() - sum - regFactor);
+                    edge.setWeight(
+                        edge.getWeight()
+                        - (
+                            this.getLearningRate()
+                            * (
+                                (1.0 / 1.0 * batch.size())
+                                * calculateDotProduct(
+                                    edge.getDeltaJCache(),
+                                    edge.getAICache()
+                                )
+                            )
+                        )
+                        - (
+                            2
+                            * this.getLearningRate()
+                            * this.getRegularization()
+                            * edge.getWeight()
+                        )
+                    );
                 }
 
                 t++;

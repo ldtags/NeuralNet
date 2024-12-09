@@ -339,6 +339,11 @@ public class Network {
                 neuron.computeDelta(this.edgeFromMap.get(neuron));
             }
         }
+
+        /* Adding newly calculated values to the caches */
+        for (Edge edge : this.getEdges()) {
+            edge.updateCaches();
+        }
     }
 
     private Integer getMaxValueIndex(List<Double> values) {
