@@ -407,15 +407,9 @@ public class Network {
      * @return The scaled, encoded output class.
      */
     public List<Double> getOutput() {
-        Double sum = 0.0;
         List<Double> outputValues = new ArrayList<>();
         for (Neuron neuron : this.getOutputLayer()) {
             outputValues.add(neuron.getOutput());
-            sum += neuron.getOutput();
-        }
-
-        for (int i = 0; i < outputValues.size(); i++) {
-            outputValues.set(i, outputValues.get(i) / sum);
         }
 
         return outputValues;
