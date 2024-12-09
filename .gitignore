@@ -5,6 +5,7 @@
 *.class
 bin
 lib
+sources.txt
 
 # data
 data
