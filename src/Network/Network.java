@@ -359,7 +359,7 @@ public class Network {
         return maxValueIndex;
     }
 
-    public Integer getOutput() {
+    public Integer getDecodedOutput() {
         List<Double> outputValues = new ArrayList<>();
         for (Neuron neuron : this.getOutputLayer()) {
             outputValues.add(neuron.getOutput());
@@ -368,9 +368,27 @@ public class Network {
         return this.getMaxValueIndex(outputValues) + 1;
     }
 
+    /**
+     * @return The scaled, encoded output class.
+     */
+    public List<Double> getOutput() {
+        Double sum = 0.0;
+        List<Double> outputValues = new ArrayList<>();
+        for (Neuron neuron : this.getOutputLayer()) {
+            outputValues.add(neuron.getOutput());
+            sum += neuron.getOutput();
+        }
+
+        for (int i = 0; i < outputValues.size(); i++) {
+            outputValues.set(i, outputValues.get(i) / sum);
+        }
+
+        return outputValues;
+    }
+
     public Integer run(List<Double> data) throws NetworkException {
         this.feed(data);
 
-        return this.getOutput();
+        return this.getDecodedOutput();
     }
 }

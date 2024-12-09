@@ -375,16 +375,22 @@ public class Agent {
      * @param dataPoint Data point.
      * @return The result of the loss function application.
      */
-    public static Double calculateLoss(Network network, DataPoint dataPoint) {
+    public static Double calculateLoss(
+        Network network,
+        DataPoint dataPoint
+    ) throws NetworkException {
         Integer predicted = null;
         Double loss = null, actual = null;
+        List<Double> actualOutput = null;
 
+        network.feed(dataPoint.getFeatures());
+        actualOutput = network.getOutput();
         loss = 0.0;
         for (int i = 0; i < dataPoint.getOutputClass().size(); i++) {
             predicted = dataPoint.getOutputClass().get(i);
-            actual = network.getOutputLayer().get(i).getOutput();
+            actual = actualOutput.get(i);
 
-            loss += Math.pow(actual - predicted, 2.0);
+            loss += Math.pow(predicted - actual, 2.0);
         }
 
         return loss;
@@ -403,7 +409,7 @@ public class Agent {
         Network network,
         List<DataPoint> data,
         Double regularization
-    ) {
+    ) throws NetworkException {
         Double regTerm = null, totalLoss = null, avgLoss = null;
 
         if (data.size() == 0) {
@@ -433,7 +439,7 @@ public class Agent {
         Integer totalCorrect = 0;
         for (DataPoint dataPoint : data) {
             network.feed(dataPoint.getFeatures());
-            if (dataPoint.getDecodedOutputClass() == network.getOutput()) {
+            if (dataPoint.getDecodedOutputClass() == network.getDecodedOutput()) {
                 totalCorrect++;
             }
         }
@@ -459,10 +465,11 @@ public class Agent {
     private static Double getMaxAbsoluteError(Network network, DataPoint dataPoint) {
         Integer predicted = null;
         Double maxAbsoluteError = null, absoluteError = null, actual = null;
+        List<Double> actualOutput = network.getOutput();
 
         for (int i = 0; i < network.getOutputLayer().size(); i++) {
             predicted = dataPoint.getOutputClass().get(i);
-            actual = network.getOutputLayer().get(i).getOutput();
+            actual = actualOutput.get(i);
             absoluteError = Math.abs(predicted - actual);
             if (maxAbsoluteError == null || absoluteError > maxAbsoluteError) {
                 maxAbsoluteError = absoluteError;
@@ -476,8 +483,6 @@ public class Agent {
         Network network,
         List<DataPoint> data
     ) throws NetworkException {
-        Double lossSum = null;
-
         if (this.getVerbosity() >= 2) {
             switch (this.getBatchSize()) {
             case 0:
@@ -501,19 +506,10 @@ public class Agent {
         }
 
         if (this.getVerbosity() >= 3) {
-            for (DataPoint dataPoint : data) {
-                network.feed(dataPoint.getFeatures());
-            }
-
-            lossSum = 0.0;
-            for (DataPoint dataPoint : data) {
-                lossSum += calculateLoss(network, dataPoint);
-            }
-
             System.out.printf(
                 "    Initial model with random weights : Cost = %.6f; Loss = %.6f; Acc = %.4f\n",
                 calculateCost(network, data, this.getRegularization()),
-                lossSum / (1.0 * data.size()),
+                calculateCost(network, data, 0.0),
                 calculateAccuracy(network, data)
             );
         }
