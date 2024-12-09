@@ -368,36 +368,62 @@ public class Agent {
         return batches;
     }
 
+    /**
+     * Applies the loss function (Squared Error) with a data point to a network.
+     * 
+     * @param network Neural network.
+     * @param dataPoint Data point.
+     * @return The result of the loss function application.
+     */
     public static Double calculateLoss(Network network, DataPoint dataPoint) {
-        Double sum = 0.0, actualOutput = null;
-        List<Integer> outputClass = dataPoint.getOutputClass();
+        Integer predicted = null;
+        Double loss = null, actual = null;
 
-        for (int i = 0; i < outputClass.size(); i++) {
-            actualOutput = network.getOutputLayer().get(i).getOutput();
-            sum += Math.pow(outputClass.get(i) - actualOutput, 2);
+        loss = 0.0;
+        for (int i = 0; i < dataPoint.getOutputClass().size(); i++) {
+            predicted = dataPoint.getOutputClass().get(i);
+            actual = network.getOutputLayer().get(i).getOutput();
+
+            loss += Math.pow(actual - predicted, 2.0);
         }
 
-        return sum;
+        return loss;
     }
 
-    private Double calculateCost(Network network, List<DataPoint> data) {
-        Double sum = 0.0, regFactor = null;
+    /**
+     * Applies the cost function with a set of data to a network.
+     * 
+     * The cost function is Mean Squared Error plus a regularization term.
+     * 
+     * @param network Neural network.
+     * @param data Set of data.
+     * @return The result of the cost function application.
+     */
+    private static Double calculateCost(
+        Network network,
+        List<DataPoint> data,
+        Double regularization
+    ) {
+        Double regTerm = null, totalLoss = null, avgLoss = null;
 
         if (data.size() == 0) {
-            return sum;
+            return 0.0;
         }
 
+        totalLoss = 0.0;
         for (DataPoint dataPoint : data) {
-            sum += calculateLoss(network, dataPoint);
+            totalLoss += calculateLoss(network, dataPoint);
         }
 
-        regFactor = 0.0;
+        avgLoss = (1.0 / (data.size() * 1.0)) * totalLoss;
+
+        regTerm = 0.0;
         for (Edge edge : network.getEdges()) {
-            regFactor += Math.pow(edge.getWeight(), 2);
+            regTerm += Math.pow(edge.getWeight(), 2);
         }
 
-        regFactor *= this.getRegularization();
-        return sum / (data.size() * 1.0) + regFactor;
+        regTerm *= regularization;
+        return avgLoss + regTerm;
     }
 
     private static Double calculateAccuracy(
@@ -413,6 +439,37 @@ public class Agent {
         }
 
         return (1.0 * totalCorrect) / (1.0 * data.size());
+    }
+
+    private static Double calculateDotProduct(List<Double> v1, List<Double> v2) {
+        Double sum = null;
+
+        if (v1.size() != v2.size()) {
+            return null;
+        }
+
+        sum = 0.0;
+        for (int i = 0; i < v1.size(); i++) {
+            sum += v1.get(i) * v2.get(i);
+        }
+
+        return sum;
+    }
+
+    private static Double getMaxAbsoluteError(Network network, DataPoint dataPoint) {
+        Integer predicted = null;
+        Double maxAbsoluteError = null, absoluteError = null, actual = null;
+
+        for (int i = 0; i < network.getOutputLayer().size(); i++) {
+            predicted = dataPoint.getOutputClass().get(i);
+            actual = network.getOutputLayer().get(i).getOutput();
+            absoluteError = Math.abs(predicted - actual);
+            if (maxAbsoluteError == null || absoluteError > maxAbsoluteError) {
+                maxAbsoluteError = absoluteError;
+            }
+        }
+
+        return maxAbsoluteError;
     }
 
     private void reportPreTrainingInfo(
@@ -455,7 +512,7 @@ public class Agent {
 
             System.out.printf(
                 "    Initial model with random weights : Cost = %.6f; Loss = %.6f; Acc = %.4f\n",
-                this.calculateCost(network, data),
+                calculateCost(network, data, this.getRegularization()),
                 lossSum / (1.0 * data.size()),
                 calculateAccuracy(network, data)
             );
@@ -499,7 +556,7 @@ public class Agent {
                 "    After %6d epochs (%6d iter.): Cost = %.6f; Loss = %.6f; Acc = %.4f\n",
                 epochs,
                 iterations,
-                this.calculateCost(network, data),
+                calculateCost(network, data, this.getRegularization()),
                 lossSum / (1.0 * data.size()),
                 calculateAccuracy(network, data)
             );
@@ -586,37 +643,6 @@ public class Agent {
         }
     }
 
-    private static Double calculateDotProduct(List<Double> v1, List<Double> v2) {
-        Double sum = null;
-
-        if (v1.size() != v2.size()) {
-            return null;
-        }
-
-        sum = 0.0;
-        for (int i = 0; i < v1.size(); i++) {
-            sum += v1.get(i) * v2.get(i);
-        }
-
-        return sum;
-    }
-
-    private static Double getMaxAbsoluteError(Network network, DataPoint dataPoint) {
-        Integer predicted = null;
-        Double maxAbsoluteError = null, absoluteError = null, actual = null;
-
-        for (int i = 0; i < network.getOutputLayer().size(); i++) {
-            predicted = dataPoint.getOutputClass().get(i);
-            actual = network.getOutputLayer().get(i).getOutput();
-            absoluteError = Math.abs(predicted - actual);
-            if (maxAbsoluteError == null || absoluteError > maxAbsoluteError) {
-                maxAbsoluteError = absoluteError;
-            }
-        }
-
-        return maxAbsoluteError;
-    }
-
     private void trainNetwork(
         Network network,
         List<DataPoint> trainingSet
@@ -644,10 +670,8 @@ public class Agent {
                         dataPoint.getOutputClass()
                     );
 
-                    if (
-                        lowOutputError
-                        && getMaxAbsoluteError(network, dataPoint) > 0.01
-                    ) {
+                    if (lowOutputError
+                            && getMaxAbsoluteError(network, dataPoint) > 0.01) {
                         lowOutputError = false;
                     }
 
@@ -685,10 +709,8 @@ public class Agent {
             }
 
             epochs++;
-            if (
-                this.getEpochLimit() < 10
-                || epochs % ((1.0 * this.getEpochLimit()) / 10.0) == 0
-            ) {
+            if (this.getEpochLimit() < 10
+                    || epochs % ((1.0 * this.getEpochLimit()) / 10.0) == 0) {
                 this.reportEpochTrainingInfo(network, epochs, t, trainingSet);
             }
 
