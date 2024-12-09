@@ -9,6 +9,8 @@ import java.util.ArrayList;
 
 import Agent.Agent;
 import Agent.AgentException;
+import Utils.ArgumentIterator;
+import Utils.ActivationFunctions;
 
 public class Driver {
     public static void main(String[] args) {
@@ -183,6 +185,46 @@ public class Driver {
                 }
 
                 break;
+
+            case "-g":
+                arg = argIterator.nextArgument();
+                if (arg == null) {
+                    System.err.println("-g must be followed by a value");
+                    return;
+                }
+
+                switch (arg) {
+                case "logistic":
+                    agent.setActivationFunction(
+                        ActivationFunctions::logistic,
+                        ActivationFunctions::logisticPrime
+                    );
+                    break;
+                case "relu":
+                    agent.setActivationFunction(
+                        ActivationFunctions::reLU,
+                        ActivationFunctions::reLUPrime
+                    );
+                    break;
+                case "softplus":
+                    agent.setActivationFunction(
+                        ActivationFunctions::softplus,
+                        ActivationFunctions::softplusPrime
+                    );
+                    break;
+                case "tanh":
+                    agent.setActivationFunction(
+                        ActivationFunctions::hyperbolicTangent,
+                        ActivationFunctions::hyperbolicTangentPrime
+                    );
+                    break;
+                default:
+                    System.err.printf("Unsupported activation function: %s\n", arg);
+                    System.err.println(
+                        "  Valid activation functions: [logistic|relu|softplus|tanh]"
+                    );
+                    return;
+                }
             }
         }
 

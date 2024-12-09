@@ -8,7 +8,10 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.function.Function;
 import java.util.concurrent.ThreadLocalRandom;
+
+import Utils.ActivationFunctions;
 
 public class Network {
     private Integer verbosity = null;
@@ -20,13 +23,17 @@ public class Network {
     private List<Edge> edges = null;
     private Map<Neuron, List<Edge>> edgeToMap = null;
     private Map<Neuron, List<Edge>> edgeFromMap = null;
+    private Function<Double, Double> activationFunction = null;
+    private Function<Double, Double> activationFunctionPrime = null;
 
     public Network(
         Integer inputNeuronCount,
         Integer outputNeuronCount,
         List<Integer> hiddenLayerCounts,
         Double initialWeight,
-        Integer verbosity
+        Integer verbosity,
+        Function<Double, Double> activationFunction,
+        Function<Double, Double> activationFunctionPrime
     ) throws NetworkException {
         this.edges = new ArrayList<>();
         this.edgeToMap = new HashMap<>();
@@ -34,12 +41,29 @@ public class Network {
 
         this.setInitialWeight(initialWeight);
         this.setVerbosity(verbosity);
+        this.setActivationFunction(activationFunction, activationFunctionPrime);
 
         this.setInputLayerBySize(inputNeuronCount);
         this.setHiddenLayersBySize(hiddenLayerCounts);
         this.setOutputLayerBySize(outputNeuronCount);
         this.initializeBiasNeuron();
         this.addEdges();
+    }
+
+    public Function<Double, Double> getActivationFunction() {
+        return this.activationFunction;
+    }
+
+    public Function<Double, Double> getActivationFunctionPrime() {
+        return this.activationFunctionPrime;
+    }
+
+    public void setActivationFunction(
+        Function<Double, Double> activationFunction,
+        Function<Double, Double> activationFunctionPrime
+    ) {
+        this.activationFunction = activationFunction;
+        this.activationFunctionPrime = activationFunctionPrime;
     }
 
     private void addEdge(Double weight, Neuron source, Neuron destination) {
@@ -181,7 +205,7 @@ public class Network {
     }
 
     private void initializeBiasNeuron() throws NetworkException {
-        Neuron biasNeuron = new Neuron(NeuronType.Input);
+        Neuron biasNeuron = new Neuron();
         biasNeuron.setInput(1.0);
         this.setBiasNeuron(biasNeuron);
     }
@@ -197,7 +221,7 @@ public class Network {
     public void setInputLayerBySize(Integer size) {
         this.inputLayer = new ArrayList<>();
         for (int i = 0; i < size; i++) {
-            this.inputLayer.add(new Neuron(NeuronType.Input));
+            this.inputLayer.add(new Neuron());
         }
     }
 
@@ -227,7 +251,12 @@ public class Network {
         for (Integer size : sizes) {
             hiddenLayer = new ArrayList<>();
             for (int i = 0; i < size; i++) {
-                hiddenLayer.add(new Neuron());
+                hiddenLayer.add(
+                    new Neuron(
+                        this.getActivationFunction(),
+                        this.getActivationFunctionPrime()
+                    )
+                );
             }
 
             this.hiddenLayers.add(hiddenLayer);
@@ -249,7 +278,13 @@ public class Network {
     public void setOutputLayerBySize(Integer size) {
         this.outputLayer = new ArrayList<>();
         for (int i = 0; i < size; i++) {
-            this.outputLayer.add(new Neuron(NeuronType.Output));
+            this.outputLayer.add(
+                new Neuron(
+                    ActivationFunctions::logistic,
+                    ActivationFunctions::logisticPrime,
+                    NeuronType.Output
+                )
+            );
         }
     }
 

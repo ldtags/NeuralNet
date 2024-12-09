@@ -5,19 +5,50 @@
 package Network;
 
 import java.util.List;
+import java.util.function.Function;
 
 public class Neuron {
     private Double input = null;
     private Double output = null;
     private Double delta = null;
     private NeuronType type = null;
+    private Function<Double, Double> activationFunction = null;
+    private Function<Double, Double> activationFunctionPrime = null;
 
-    public Neuron(NeuronType type) {
+    public Neuron(
+        Function<Double, Double> activationFunction,
+        Function<Double, Double> activationFunctionPrime,
+        NeuronType type
+    ) {
         this.setType(type);
+        this.setActivationFunction(activationFunction, activationFunctionPrime);
+    }
+
+    public Neuron(
+        Function<Double, Double> activationFunction,
+        Function<Double, Double> activationFunctionPrime
+    ) {
+        this(activationFunction, activationFunctionPrime, NeuronType.Hidden);
     }
 
     public Neuron() {
-        this(NeuronType.Hidden);
+        this((input) -> {return input;}, null, NeuronType.Input);
+    }
+
+    public Function<Double, Double> getActivationFunction() {
+        return this.activationFunction;
+    }
+
+    public Function<Double, Double> getActivationFunctionPrime() {
+        return this.activationFunctionPrime;
+    }
+
+    public void setActivationFunction(
+        Function<Double, Double> activationFunction,
+        Function<Double, Double> activationFunctionPrime
+    ) {
+        this.activationFunction = activationFunction;
+        this.activationFunctionPrime = activationFunctionPrime;
     }
 
     public NeuronType getType() {
@@ -68,24 +99,20 @@ public class Neuron {
         this.delta = delta;
     }
 
-    public void activate() throws NetworkException {
+    public void activate() {
         if (this.getInput() == null) {
-            throw new NetworkException("Cannot activate neuron before input");
+            return;
         }
 
-        if (this.type == NeuronType.Input) {
-            this.setOutput(this.getInput());
-        } else {
-            this.setOutput(1.0 / (1.0 + Math.exp(-1.0 * this.getInput())));
-        }
+        this.setOutput(this.getActivationFunction().apply(this.getInput()));
     }
 
-    public Double getPrimeActivation() throws NetworkException {
+    public Double getPrimeActivation() {
         if (this.getOutput() == null) {
             this.activate();
         }
 
-        return this.getOutput() * (1 - this.getOutput());
+        return this.getActivationFunctionPrime().apply(this.getOutput());
     }
 
     public void computeDelta(Integer y) throws NetworkException {

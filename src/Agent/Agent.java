@@ -13,7 +13,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.function.Function;
 
+import Utils.ActivationFunctions;
 import Models.DataPoint;
 import Network.Edge;
 import Network.Neuron;
@@ -30,6 +32,8 @@ public class Agent {
     private Double weightInit = 0.1;
     private Integer verbosity = 1;
     private List<DataPoint> data = null;
+    private Function<Double, Double> activationFunction = ActivationFunctions::logistic;
+    private Function<Double, Double> activationFunctionPrime = ActivationFunctions::logisticPrime;
 
     public Agent() {
         this.hiddenLayerSizes = new ArrayList<>();
@@ -112,6 +116,22 @@ public class Agent {
         }
 
         this.verbosity = verbosity;
+    }
+
+    public Function<Double, Double> getActivationFunction() {
+        return this.activationFunction;
+    }
+
+    public Function<Double, Double> getActivationFunctionPrime() {
+        return this.activationFunctionPrime;
+    }
+
+    public void setActivationFunction(
+        Function<Double, Double> activationFunction,
+        Function<Double, Double> activationFunctionPrime
+    ) {
+        this.activationFunction = activationFunction;
+        this.activationFunctionPrime = activationFunctionPrime;
     }
 
     public List<DataPoint> getData() {
@@ -942,7 +962,9 @@ public class Agent {
                 this.getNumberOfClasses(),
                 this.getHiddenLayerSizes(),
                 this.getWeightInitialization(),
-                this.getVerbosity()
+                this.getVerbosity(),
+                this.getActivationFunction(),
+                this.getActivationFunctionPrime()
             );
 
             System.out.printf("* Training network (using %d examples)\n", trainingSet.size());
