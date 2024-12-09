@@ -236,7 +236,7 @@ public class Agent {
         }
 
         splitData = new HashMap<>();
-        trainingSetSize = Math.ceilDiv(inputData.size() * 4, 5);
+        trainingSetSize = (int) Math.ceil((inputData.size() * 4.0) / 5.0);
         splitData.put("training", inputData.subList(0, trainingSetSize));
         splitData.put("validation", inputData.subList(trainingSetSize, inputData.size()));
         return splitData;
@@ -343,7 +343,9 @@ public class Agent {
 
         // Mini-Batch Gradient Descent
         default:
-            batchCount = Math.ceilDiv(data.size(), this.getBatchSize());
+            batchCount = (int) Math.ceil(
+                (1.0 * data.size()) / (1.0 * this.getBatchSize())
+            );
             batches = new ArrayList<>(batchCount);
             if (this.randomized) {
                 randomData = new ArrayList<>(data);
