@@ -378,10 +378,4 @@ public class Network {
 
         return outputValues;
     }
-
-    public Integer run(List<Double> data) throws NetworkException {
-        this.feed(data);
-
-        return this.getDecodedOutput();
-    }
 }
