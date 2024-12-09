@@ -601,12 +601,29 @@ public class Agent {
         return sum;
     }
 
+    private static Double getMaxAbsoluteError(Network network, DataPoint dataPoint) {
+        Integer predicted = null;
+        Double maxAbsoluteError = null, absoluteError = null, actual = null;
+
+        for (int i = 0; i < network.getOutputLayer().size(); i++) {
+            predicted = dataPoint.getOutputClass().get(i);
+            actual = network.getOutputLayer().get(i).getOutput();
+            absoluteError = Math.abs(predicted - actual);
+            if (maxAbsoluteError == null || absoluteError > maxAbsoluteError) {
+                maxAbsoluteError = absoluteError;
+            }
+        }
+
+        return maxAbsoluteError;
+    }
+
     private void trainNetwork(
         Network network,
         List<DataPoint> trainingSet
     ) throws NetworkException {
         Integer t = 0, epochs = 0, exampleNumber = 1;
         Long startTime = null;
+        Boolean lowOutputError = true;
         String stopCondition = "Epoch Limit";
         List<List<DataPoint>> batches = null;
 
@@ -626,6 +643,13 @@ public class Agent {
                         dataPoint.getFeatures(),
                         dataPoint.getOutputClass()
                     );
+
+                    if (
+                        lowOutputError
+                        && getMaxAbsoluteError(network, dataPoint) > 0.01
+                    ) {
+                        lowOutputError = false;
+                    }
 
                     this.reportNetworkState(
                         network,
@@ -661,9 +685,16 @@ public class Agent {
             }
 
             epochs++;
-            if (this.getEpochLimit() < 10
-                    || epochs % ((1.0 * this.getEpochLimit()) / 10.0) == 0) {
+            if (
+                this.getEpochLimit() < 10
+                || epochs % ((1.0 * this.getEpochLimit()) / 10.0) == 0
+            ) {
                 this.reportEpochTrainingInfo(network, epochs, t, trainingSet);
+            }
+
+            if (lowOutputError) {
+                stopCondition = "Minimal Absolute Error";
+                break;
             }
         }
 
