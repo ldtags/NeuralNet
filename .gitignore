@@ -3,6 +3,8 @@
 
 # java
 *.class
+bin
+lib
 
 # data
 data
