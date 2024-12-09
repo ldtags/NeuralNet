@@ -287,57 +287,6 @@ public class Network {
         this.addHiddenLayerEdges();
     }
 
-    /**
-     * Feeds a data set to the network using forward propagaion.
-     * 
-     * @param data Input data set.
-     */
-    public void feed(List<Double> data) {
-        for (int i = 0; i < this.getInputLayer().size(); i++) {
-            this.getInputLayer().get(i).setInput(data.get(i));
-        }
-
-        for (List<Neuron> layer : this.getLayers()) {
-            for (Neuron neuron : layer) {
-                neuron.update();
-            }
-        }
-    }
-
-    public void backpropagate(
-        List<Double> inputs,
-        List<Integer> outputClass
-    ) throws NetworkException {
-        if (inputs.size() != this.getInputLayer().size()) {
-            throw new NetworkException(
-                String.format(
-                    "Invalid input vector size: %d should be %d",
-                    inputs.size(),
-                    this.getInputLayer().size()
-                )
-            );
-        }
-
-        /* Forward Propagating */
-        this.feed(inputs);
-
-        /* Backward Propagating */
-        for (int i = 0; i < this.getOutputLayer().size(); i++) {
-            this.getOutputLayer().get(i).computeDelta(outputClass.get(i));
-        }
-
-        for (int i = this.getHiddenLayers().size() - 1; i >= 0; i--) {
-            for (Neuron neuron : this.getHiddenLayer(i)) {
-                neuron.computeDelta();
-            }
-        }
-
-        /* Adding newly calculated values to the caches */
-        for (Edge edge : this.getEdges()) {
-            edge.updateCaches();
-        }
-    }
-
     private Integer getMaxValueIndex(List<Double> values) {
         Double maxValue = null;
         Integer maxValueIndex = null;
@@ -377,5 +326,58 @@ public class Network {
         }
 
         return outputValues;
+    }
+
+    /**
+     * Feeds a data set to the network using forward propagaion.
+     * 
+     * @param data Input data set.
+     */
+    public List<Double> feed(List<Double> data) {
+        for (int i = 0; i < this.getInputLayer().size(); i++) {
+            this.getInputLayer().get(i).setInput(data.get(i));
+        }
+
+        for (List<Neuron> layer : this.getLayers()) {
+            for (Neuron neuron : layer) {
+                neuron.update();
+            }
+        }
+
+        return this.getOutput();
+    }
+
+    public void backpropagate(
+        List<Double> inputs,
+        List<Integer> outputClass
+    ) throws NetworkException {
+        if (inputs.size() != this.getInputLayer().size()) {
+            throw new NetworkException(
+                String.format(
+                    "Invalid input vector size: %d should be %d",
+                    inputs.size(),
+                    this.getInputLayer().size()
+                )
+            );
+        }
+
+        /* Forward Propagating */
+        this.feed(inputs);
+
+        /* Backward Propagating */
+        for (int i = 0; i < this.getOutputLayer().size(); i++) {
+            this.getOutputLayer().get(i).computeDelta(outputClass.get(i));
+        }
+
+        for (int i = this.getHiddenLayers().size() - 1; i >= 0; i--) {
+            for (Neuron neuron : this.getHiddenLayer(i)) {
+                neuron.computeDelta();
+            }
+        }
+
+        /* Adding newly calculated values to the caches */
+        for (Edge edge : this.getEdges()) {
+            edge.updateCaches();
+        }
     }
 }
