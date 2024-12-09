@@ -1,7 +1,8 @@
-package Utils;
 /*
  * Author: Liam D. Tangney
  */
+
+package Utils;
 
 public class ArgumentIterator {
     String[] args = null;

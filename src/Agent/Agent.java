@@ -276,7 +276,10 @@ public class Agent {
      * @return Mapping of training and validation sets to the respective keywords
      *      "training" and "validation".
      */
-    private static Map<String, List<DataPoint>> splitDataPoints(List<DataPoint> data, boolean randomize) {
+    private static Map<String, List<DataPoint>> splitDataPoints(
+        List<DataPoint> data,
+        boolean randomize
+    ) {
         Integer trainingSetSize = null;
         List<DataPoint> inputData = null;
         Map<String, List<DataPoint>> splitData = null;
@@ -967,7 +970,10 @@ public class Agent {
                 this.getActivationFunctionPrime()
             );
 
-            System.out.printf("* Training network (using %d examples)\n", trainingSet.size());
+            System.out.printf(
+                "* Training network (using %d examples)\n",
+                trainingSet.size()
+            );
             this.trainNetwork(network, trainingSet);
 
             System.out.println("* Evaluating accuracy");

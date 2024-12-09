@@ -1,3 +1,7 @@
+/*
+ * Author: Liam D. Tangney
+ */
+
 package Network;
 
 public enum NeuronType {
