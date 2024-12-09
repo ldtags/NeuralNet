@@ -1,5 +1,6 @@
 # environment
 .vscode
+notes.txt
 
 # java
 *.class
