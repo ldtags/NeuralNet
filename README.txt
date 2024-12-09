@@ -1,6 +1,10 @@
-Compile project via:
-    javac @sources.txt -d bin
+Compiling project:
+    Windows (Command Prompt):
+        javac @sources.txt -d bin
 
-Run project via:
+    Windows (PowerShell) or UNIX:
+
+
+Running project:
     cd bin
     java Driver [args]
