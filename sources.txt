@@ -1,5 +1,6 @@
-.\src\ArgumentIterator.java
 .\src\Driver.java
+.\src\Utils\ArgumentIterator.java
+.\src\Utils\ActivationFunctions.java
 .\src\Agent\Agent.java
 .\src\Agent\AgentException.java
 .\src\Models\DataPoint.java
