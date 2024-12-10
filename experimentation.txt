@@ -1,0 +1,10 @@
+Best Accuracy Generated:
+    Flags:
+        -f data/image-05.dat
+        -e 5000
+        -h 2 3 2
+        -l 0.0001
+        -g logistic
+
+    Training Accuracy  : 0.263813
+    Validation Accuracy: 0.227092
